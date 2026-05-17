@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Project Turbo — AGC</title>
+  <style>
+    :root {
+      --bg:          #0f0f11;
+      --surface:     #1a1a1e;
+      --surface-2:   #222228;
+      --surface-3:   #2c2c34;
+      --ink-1:       #f0f0f5;
+      --ink-2:       #8e8ea0;
+      --ink-3:       #48485a;
+      --sep:         rgba(255,255,255,.07);
+      --accent:      #e8b84b;
+      --accent-dim:  rgba(232,184,75,.10);
+      --accent-mid:  rgba(232,184,75,.22);
+      --yes:         #30d158;
+      --yes-bg:      rgba(48,209,88,.13);
+      --no:          #ff453a;
+      --no-bg:       rgba(255,69,58,.13);
+      --r-sm:  10px;
+      --r-md:  14px;
+      --r-lg:  18px;
+      --r-xl:  24px;
+      --shadow: 0 2px 20px rgba(0,0,0,.45), 0 0 0 .5px rgba(255,255,255,.06);
+      --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      --ease: cubic-bezier(.4,0,.2,1);
+      --spring: cubic-bezier(.34,1.56,.64,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--ink-1);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { width: 100%; max-width: 430px; margin: 0 auto; padding-bottom: 72px; }
+    @media (min-width: 500px) {
+      body { padding: 40px 20px 60px; display: flex; justify-content: center; align-items: flex-start; }
+      .page { border-radius: var(--r-xl); overflow: hidden; box-shadow: 0 32px 100px rgba(0,0,0,.7); }
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: #080809;
+      padding: 36px 24px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 180px; pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--accent) 40%, #f5d78e 60%, transparent 100%);
+    }
+    .hero-glow {
+      position: absolute; top: -80px; right: -80px;
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, rgba(232,184,75,.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-brand {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 26px; position: relative;
+    }
+    .hero-logo-wrap { display: flex; align-items: center; gap: 11px; }
+    .agc-badge {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent) 0%, #f5d78e 100%);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(232,184,75,.35);
+    }
+    .agc-badge span { font-size: 13px; font-weight: 900; letter-spacing: .5px; color: #080809; }
+    .hero-wordmark { display: flex; flex-direction: column; gap: 2px; }
+    .hero-wordmark-name { font-size: 13px; font-weight: 700; letter-spacing: 2.5px; color: #fff; text-transform: uppercase; line-height: 1; }
+    .hero-wordmark-sub  { font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; opacity: .75; }
+    .hero-date-pill {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 100px;
+      padding: 5px 13px;
+      font-size: 11px; font-weight: 500; color: var(--ink-2); letter-spacing: .3px;
+    }
+    .hero h1 {
+      font-size: clamp(30px, 9vw, 38px); font-weight: 200;
+      letter-spacing: -1.5px; color: #fff; line-height: 1.05; position: relative;
+    }
+    .hero h1 strong {
+      font-weight: 800; display: block;
+      background: linear-gradient(135deg, var(--accent) 0%, #f5d78e 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero h1 span { color: rgba(255,255,255,.18); font-weight: 200; display: block; font-size: 78%; letter-spacing: -1px; }
+    .hero-sub {
+      font-size: 13px; color: rgba(255,255,255,.28);
+      margin-top: 10px; line-height: 1.65; position: relative; letter-spacing: .1px;
+    }
+    .hero-sub em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+    /* ── Groups ── */
+    .group { margin: 22px 16px 0; }
+    .group-label {
+      font-size: 11px; font-weight: 600; letter-spacing: .5px;
+      color: var(--ink-2); text-transform: uppercase;
+      padding: 0 4px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .group-label::before {
+      content: ''; display: inline-block;
+      width: 3px; height: 11px;
+      background: var(--accent); border-radius: 2px;
+    }
+    .group-card {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .field-row {
+      display: flex; align-items: center;
+      padding: 0 16px; min-height: 52px; position: relative;
+    }
+    .field-row + .field-row::before {
+      content: ''; position: absolute; top: 0; left: 16px; right: 0;
+      height: .5px; background: var(--sep);
+    }
+    .field-row label {
+      font-size: 15px; font-weight: 400; color: var(--ink-1);
+      min-width: 110px; flex-shrink: 0; pointer-events: none; user-select: none;
+    }
+    .field-row input {
+      flex: 1; border: none; outline: none; font-family: var(--font);
+      font-size: 15px; color: var(--ink-1); background: transparent;
+      text-align: right; padding: 14px 0;
+      min-width: 0; caret-color: var(--accent);
+    }
+    .field-row input::placeholder { color: var(--ink-3); }
+
+    /* ── Autocomplete ── */
+    .autocomplete-wrap { position: relative; flex: 1; }
+    .autocomplete-wrap input { width: 100%; text-align: right; }
+    .autocomplete-list {
+      position: absolute; top: calc(100% + 6px); right: -16px; left: -126px;
+      background: var(--surface-2);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--r-md);
+      box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      z-index: 200;
+      max-height: 230px; overflow-y: auto;
+      display: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .autocomplete-list.open { display: block; animation: fadeUp .15s var(--ease); }
+    .autocomplete-item {
+      padding: 11px 14px;
+      font-size: 14px; color: var(--ink-1);
+      cursor: pointer;
+      border-bottom: .5px solid var(--sep);
+      transition: background .12s;
+    }
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item.highlighted, .autocomplete-item:active { background: var(--surface-3); }
+    .autocomplete-item mark { background: none; color: var(--accent); font-weight: 700; }
+    .autocomplete-item small { display: block; font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+
+    /* ── Customer detail card ── */
+    .cust-card {
+      margin: 10px 16px 0;
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      border: 1px solid rgba(232,184,75,.18);
+      box-shadow: 0 0 0 1px rgba(232,184,75,.06), var(--shadow);
+      overflow: hidden;
+      display: none;
+    }
+    .cust-card.visible { display: block; animation: fadeUp .22s var(--ease); }
+    .cust-card-head {
+      background: linear-gradient(135deg, rgba(232,184,75,.12) 0%, rgba(232,184,75,.04) 100%);
+      padding: 13px 16px;
+      border-bottom: .5px solid rgba(232,184,75,.14);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .cust-card-icon {
+      width: 30px; height: 30px;
+      background: var(--accent-dim);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .cust-card-title { font-size: 13px; font-weight: 700; color: var(--accent); }
+    .cust-card-code  { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
+    .cust-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: .5px; background: var(--sep);
+    }
+    .cust-cell { background: var(--surface); padding: 11px 14px; }
+    .cust-cell-lbl { font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+    .cust-cell-val { font-size: 13px; font-weight: 500; color: var(--ink-1); }
+    .cust-cell.span2 { grid-column: span 2; }
+    .cust-cell.gold .cust-cell-val { color: var(--accent); font-weight: 700; }
+
+    /* ── Checklist items ── */
+    .check-item {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin: 10px 16px 0;
+    }
+    .check-item-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 16px; gap: 12px;
+    }
+    .check-item-label { font-size: 15px; font-weight: 400; color: var(--ink-1); line-height: 1.35; flex: 1; }
+    .check-item-num  { font-size: 10px; font-weight: 700; letter-spacing: .5px; color: var(--ink-3); margin-bottom: 3px; text-transform: uppercase; }
+    .toggle-pair { display: flex; gap: 6px; flex-shrink: 0; }
+    .tog-btn {
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(255,255,255,.1);
+      background: transparent;
+      font-family: var(--font);
+      font-size: 13px; font-weight: 600; letter-spacing: .3px;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: all .18s var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tog-btn.yes.active { background: var(--yes-bg); border-color: var(--yes); color: var(--yes); }
+    .tog-btn.no.active  { background: var(--no-bg);  border-color: var(--no);  color: var(--no); }
+
+    /* Conditional sub-field */
+    .sub-field {
+      max-height: 0; overflow: hidden;
+      transition: max-height .3s var(--ease), opacity .25s var(--ease);
+      opacity: 0;
+    }
+    .sub-field.open { max-height: 200px; opacity: 1; border-top: .5px solid var(--sep); }
+    .sub-field textarea, .sub-field input[type=text] {
+      display: block; width: 100%;
+      background: transparent; border: none; outline: none;
+      font-family: var(--font); font-size: 14px; color: var(--ink-1);
+      padding: 14px 16px; resize: none;
+      caret-color: var(--accent);
+    }
+    .sub-field textarea { min-height: 80px; }
+    .sub-field textarea::placeholder,
+    .sub-field input[type=text]::placeholder { color: var(--ink-3); }
+
+    /* ── Suggestions box ── */
+    .suggest-box {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      margin: 10px 16px 0; overflow: hidden;
+    }
+    .suggest-box-head { display: flex; align-items: center; gap: 10px; padding: 15px 16px 0; }
+    .suggest-icon {
+      width: 26px; height: 26px;
+      background: rgba(232,184,75,.1);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .suggest-box-label { font-size: 15px; font-weight: 400; color: var(--ink-1); }
+    .suggest-box textarea {
+      display: block; width: 100%;
+      background: transparent; border: none; outline: none;
+      font-family: var(--font); font-size: 14px; color: var(--ink-1);
+      padding: 12px 16px 16px; resize: none; min-height: 90px;
+      caret-color: var(--accent);
+    }
+    .suggest-box textarea::placeholder { color: var(--ink-3); }
+
+    /* ── Submit ── */
+    .submit-wrap { margin: 28px 16px 0; }
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent) 0%, #f0c060 100%);
+      border: none; border-radius: var(--r-lg);
+      padding: 17px 24px;
+      font-family: var(--font); font-size: 16px; font-weight: 700;
+      color: #080809; letter-spacing: .3px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(232,184,75,.35);
+      transition: opacity .18s, transform .18s var(--spring);
+      -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .submit-btn:active { transform: scale(.98); opacity: .9; }
+    .submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-spinner {
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(8,8,9,.25);
+      border-top-color: #080809;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    .error-msg {
+      margin: 10px 16px 0;
+      padding: 12px 16px;
+      background: rgba(255,69,58,.1);
+      border: 1px solid rgba(255,69,58,.25);
+      border-radius: var(--r-md);
+      font-size: 13px; color: var(--no); line-height: 1.5;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── Success screen ── */
+    .success-screen {
+      display: none;
+      min-height: 100dvh;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 32px; text-align: center;
+      background: var(--bg);
+      animation: fadeIn .4s var(--ease);
+    }
+    .success-screen.show { display: flex; }
+    .success-ring {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #f5d78e);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(232,184,75,.4);
+      animation: popIn .5s var(--spring);
+    }
+    .success-title { font-size: 26px; font-weight: 700; color: var(--ink-1); letter-spacing: -1px; margin-bottom: 10px; }
+    .success-sub { font-size: 14px; color: var(--ink-2); line-height: 1.6; margin-bottom: 32px; max-width: 280px; }
+    .success-sub em { color: var(--accent); font-style: normal; font-weight: 600; }
+    .another-btn {
+      padding: 15px 40px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--r-lg);
+      font-family: var(--font); font-size: 15px; font-weight: 600;
+      color: var(--ink-1); cursor: pointer;
+      transition: background .18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .another-btn:active { background: var(--surface-2); }
+
+    /* ── Loading overlay ── */
+    .loading-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15,15,17,.88);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-ring {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(232,184,75,.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    .loading-text { font-size: 14px; color: var(--ink-2); letter-spacing: .3px; }
+
+    /* ── Footer credit ── */
+    .footer-credit {
+      text-align: center;
+      padding: 28px 16px 6px;
+      font-size: 9px;
+      color: var(--ink-3);
+      letter-spacing: .8px;
+      opacity: .45;
+      text-transform: lowercase;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes popIn {
+      from { transform: scale(.6); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-ring"></div>
+  <div class="loading-text">Submitting visit report…</div>
+</div>
+
+<!-- Success screen -->
+<div class="success-screen" id="successScreen">
+  <div class="success-ring">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#080809" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  </div>
+  <div class="success-title">Visit Logged! 🔥</div>
+  <div class="success-sub">
+    Report saved successfully.<br>
+    <em>Champions show up every day.</em><br>
+    Keep going — the numbers don't lie.
+  </div>
+  <button class="another-btn" onclick="resetForm()">Submit Another Visit</button>
+</div>
+
+<!-- Main form -->
+<div class="page" id="formPage">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-brand">
+      <div class="hero-logo-wrap">
+        <div class="agc-badge"><span>AGC</span></div>
+        <div class="hero-wordmark">
+          <div class="hero-wordmark-name">Project Turbo</div>
+          <div class="hero-wordmark-sub">Field Visit Report</div>
+        </div>
+      </div>
+      <div class="hero-date-pill" id="todayPill"></div>
+    </div>
+    <h1>
+      <strong>Every Shop Visit</strong>
+      <span>is a chance to dominate.</span>
+    </h1>
+    <p class="hero-sub">
+      Show up. Fill sharp. <em>Win big.</em>
+    </p>
+  </div>
+
+  <div style="background:var(--bg)">
+
+    <!-- Visit Details -->
+    <div class="group">
+      <div class="group-label">Visit Details</div>
+      <div class="group-card">
+        <div class="field-row">
+          <label>Your Name</label>
+          <input type="text" id="execName" placeholder="Sales executive" autocomplete="off"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer search -->
+    <div class="group">
+      <div class="group-label">Customer</div>
+      <div class="group-card">
+        <div class="field-row">
+          <label>Shop / Customer</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="custSearch" placeholder="Type to search…" autocomplete="off"/>
+            <div class="autocomplete-list" id="autocompleteList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer detail card -->
+    <div class="cust-card" id="custCard">
+      <div class="cust-card-head">
+        <div class="cust-card-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e8b84b" stroke-width="2.2" stroke-linecap="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cust-card-title" id="ccName">—</div>
+          <div class="cust-card-code"  id="ccCode">—</div>
+        </div>
+      </div>
+      <div class="cust-grid">
+        <div class="cust-cell">
+          <div class="cust-cell-lbl">Branch</div>
+          <div class="cust-cell-val" id="ccBranch">—</div>
+        </div>
+        <div class="cust-cell">
+          <div class="cust-cell-lbl">Cluster</div>
+          <div class="cust-cell-val" id="ccCluster">—</div>
+        </div>
+        <div class="cust-cell">
+          <div class="cust-cell-lbl">Enrolled</div>
+          <div class="cust-cell-val" id="ccEnrolled">—</div>
+        </div>
+        <div class="cust-cell gold">
+          <div class="cust-cell-lbl">Last Month</div>
+          <div class="cust-cell-val" id="ccLastMonth">—</div>
+        </div>
+        <div class="cust-cell gold">
+          <div class="cust-cell-lbl">May Till 16</div>
+          <div class="cust-cell-val" id="ccMay">—</div>
+        </div>
+        <div class="cust-cell">
+          <div class="cust-cell-lbl">2024 Avg</div>
+          <div class="cust-cell-val" id="ccAvg24">—</div>
+        </div>
+        <div class="cust-cell">
+          <div class="cust-cell-lbl">2025 Avg</div>
+          <div class="cust-cell-val" id="ccAvg25">—</div>
+        </div>
+        <div class="cust-cell gold span2">
+          <div class="cust-cell-lbl">2026 Avg</div>
+          <div class="cust-cell-val" id="ccAvg26">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checklist heading -->
+    <div class="group" style="margin-top:26px">
+      <div class="group-label">Visit Checklist</div>
+    </div>
+
+    <!-- 1. Display Material -->
+    <div class="check-item">
+      <div class="check-item-head">
+        <div class="check-item-label">
+          <div class="check-item-num">01</div>
+          Display Material Status
+        </div>
+        <div class="toggle-pair">
+          <button class="tog-btn yes" onclick="toggle('display','yes',this)">Yes</button>
+          <button class="tog-btn no"  onclick="toggle('display','no',this)">No</button>
+        </div>
+      </div>
+      <div class="sub-field" id="sf-display">
+        <input type="text" id="displayNote" placeholder="What's missing or misplaced?"/>
+      </div>
+    </div>
+
+    <!-- 2. Competitor -->
+    <div class="check-item">
+      <div class="check-item-head">
+        <div class="check-item-label">
+          <div class="check-item-num">02</div>
+          Competitor Product Presence
+        </div>
+        <div class="toggle-pair">
+          <button class="tog-btn yes" onclick="toggle('competitor','yes',this)">Yes</button>
+          <button class="tog-btn no"  onclick="toggle('competitor','no',this)">No</button>
+        </div>
+      </div>
+      <div class="sub-field" id="sf-competitor">
+        <input type="text" id="competitorBrand" placeholder="Specify brand / promotion"/>
+      </div>
+    </div>
+
+    <!-- 3. Stock -->
+    <div class="check-item">
+      <div class="check-item-head">
+        <div class="check-item-label">
+          <div class="check-item-num">03</div>
+          Stock Status
+        </div>
+        <div class="toggle-pair">
+          <button class="tog-btn yes" onclick="toggle('stock','yes',this)">Yes</button>
+          <button class="tog-btn no"  onclick="toggle('stock','no',this)">No</button>
+        </div>
+      </div>
+      <div class="sub-field" id="sf-stock">
+        <input type="text" id="stockNote" placeholder="What's low or out of stock?"/>
+      </div>
+    </div>
+
+    <!-- 4. Pending Orders -->
+    <div class="check-item">
+      <div class="check-item-head">
+        <div class="check-item-label">
+          <div class="check-item-num">04</div>
+          Pending Orders / Requirements
+        </div>
+        <div class="toggle-pair">
+          <button class="tog-btn yes" onclick="toggle('pending','yes',this)">Yes</button>
+          <button class="tog-btn no"  onclick="toggle('pending','no',this)">No</button>
+        </div>
+      </div>
+      <div class="sub-field" id="sf-pending">
+        <textarea id="pendingNote" placeholder="Describe the pending items or shortage"></textarea>
+      </div>
+    </div>
+
+    <!-- 5. Suggestions -->
+    <div class="suggest-box">
+      <div class="suggest-box-head">
+        <div class="suggest-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8b84b" stroke-width="2.2" stroke-linecap="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <div class="suggest-box-label">Suggestions / Feedback</div>
+      </div>
+      <textarea id="suggestions" placeholder="Share observations, opportunities or market feedback…"></textarea>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Submit -->
+    <div class="submit-wrap">
+      <button class="submit-btn" id="submitBtn" onclick="submitForm()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Submit Visit Report
+      </button>
+    </div>
+
+    <!-- Footer credit -->
+    <div class="footer-credit">created by A.R</div>
+
+  </div>
+</div><!-- /page -->
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOsb-ym0v_Ynao-Yk0Po4VrgMKpj53DUJtBW5gP7WC-mljfKzMlu-0YIzuMsfcBe0sYQ/exec';
+
+  let customers = [];
+  let selectedCustomer = null;
+  const state = { display: null, competitor: null, stock: null, pending: null };
+
+  // ── Init ──
+  document.addEventListener('DOMContentLoaded', () => {
+    const d = new Date();
+    document.getElementById('todayPill').textContent =
+      d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+
+    loadCustomers();
+
+    const inp = document.getElementById('custSearch');
+    inp.addEventListener('input', onCustInput);
+    inp.addEventListener('keydown', onCustKeydown);
+    document.addEventListener('click', e => {
+      if (!document.getElementById('autocompleteList').contains(e.target) && e.target !== inp) closeAC();
+    });
+  });
+
+  // ── Load customers ──
+  async function loadCustomers() {
+    try {
+      const r = await fetch(SCRIPT_URL);
+      const d = await r.json();
+      if (d.status === 'success') customers = d.customers;
+    } catch(e) { console.warn('Could not load customers', e); }
+  }
+
+  // ── Autocomplete ──
+  let acHighlight = -1;
+  let filteredCache = [];
+
+  function onCustInput() {
+    const q = document.getElementById('custSearch').value.trim().toLowerCase();
+    if (!q) { closeAC(); clearCustCard(); return; }
+    filteredCache = customers.filter(c => c.name.toLowerCase().includes(q)).slice(0, 12);
+    renderAC(filteredCache, q);
+  }
+
+  function renderAC(matches, q) {
+    const list = document.getElementById('autocompleteList');
+    if (!matches.length) { closeAC(); return; }
+    const esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    list.innerHTML = matches.map((c, i) => {
+      const hi = c.name.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
+      return `<div class="autocomplete-item" data-i="${i}" onmousedown="pickCustomer(${i})">${hi}<small>${c.branch || ''} · ${c.cluster || ''} · Code: ${c.custCode}</small></div>`;
+    }).join('');
+    acHighlight = -1;
+    list.classList.add('open');
+  }
+
+  function onCustKeydown(e) {
+    const list  = document.getElementById('autocompleteList');
+    const items = list.querySelectorAll('.autocomplete-item');
+    if (!items.length) return;
+    if      (e.key === 'ArrowDown')  { e.preventDefault(); acHighlight = Math.min(acHighlight+1, items.length-1); hiAC(items); }
+    else if (e.key === 'ArrowUp')    { e.preventDefault(); acHighlight = Math.max(acHighlight-1, 0); hiAC(items); }
+    else if (e.key === 'Enter' && acHighlight >= 0) { e.preventDefault(); pickCustomer(acHighlight); }
+    else if (e.key === 'Escape')     closeAC();
+  }
+
+  function hiAC(items) {
+    items.forEach((el,i) => el.classList.toggle('highlighted', i === acHighlight));
+  }
+
+  function closeAC() {
+    document.getElementById('autocompleteList').classList.remove('open');
+  }
+
+  function pickCustomer(idx) {
+    selectedCustomer = filteredCache[idx];
+    document.getElementById('custSearch').value = selectedCustomer.name;
+    closeAC();
+    showCustCard(selectedCustomer);
+  }
+
+  function showCustCard(c) {
+    document.getElementById('ccName').textContent      = c.name;
+    document.getElementById('ccCode').textContent      = 'Code: ' + c.custCode;
+    document.getElementById('ccBranch').textContent    = c.branch        || '—';
+    document.getElementById('ccCluster').textContent   = c.cluster       || '—';
+    document.getElementById('ccEnrolled').textContent  = c.enrolledMonth ? c.enrolledMonth + ' ' + c.enrolledYear : '—';
+    document.getElementById('ccLastMonth').textContent = fmt(c.lastMonthBill);
+    document.getElementById('ccMay').textContent       = fmt(c.mayTill16);
+    document.getElementById('ccAvg24').textContent     = fmt(c.avg2024);
+    document.getElementById('ccAvg25').textContent     = fmt(c.avg2025);
+    document.getElementById('ccAvg26').textContent     = fmt(c.avg2026);
+    document.getElementById('custCard').classList.add('visible');
+  }
+
+  function clearCustCard() {
+    selectedCustomer = null;
+    document.getElementById('custCard').classList.remove('visible');
+  }
+
+  function fmt(v) {
+    if (v === '' || v == null) return '—';
+    const n = parseFloat(v);
+    if (isNaN(n)) return v;
+    return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
+  // ── Toggles ──
+  // Show sub-field when: display→No, competitor→Yes, stock→No, pending→Yes
+  const showOn = { display:'no', competitor:'yes', stock:'no', pending:'yes' };
+
+  function toggle(field, val, btn) {
+    btn.closest('.toggle-pair').querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state[field] = val;
+    const sf = document.getElementById('sf-' + field);
+    const open = val === showOn[field];
+    sf.classList.toggle('open', open);
+    if (open) { const el = sf.querySelector('input,textarea'); if (el) setTimeout(() => el.focus(), 310); }
+    else       { const el = sf.querySelector('input,textarea'); if (el) el.value = ''; }
+  }
+
+  // ── Submit ──
+  async function submitForm() {
+    const execName = document.getElementById('execName').value.trim();
+    const custName = document.getElementById('custSearch').value.trim();
+    const errEl    = document.getElementById('errorMsg');
+    errEl.classList.remove('show');
+
+    if (!execName)                      { showErr('Please enter your name before submitting.'); return; }
+    if (!custName || !selectedCustomer) { showErr('Please select a customer from the list.'); return; }
+
+    const visitDate = new Date().toISOString().split('T')[0];
+
+    const payload = {
+      executiveName:     execName,
+      custCode:          selectedCustomer.custCode,
+      customerName:      selectedCustomer.name,
+      branch:            selectedCustomer.branch,
+      cluster:           selectedCustomer.cluster,
+      enrolledMonth:     selectedCustomer.enrolledMonth,
+      enrolledYear:      selectedCustomer.enrolledYear,
+      lastMonthBill:     selectedCustomer.lastMonthBill,
+      mayTill16:         selectedCustomer.mayTill16,
+      avg2024:           selectedCustomer.avg2024,
+      avg2025:           selectedCustomer.avg2025,
+      avg2026:           selectedCustomer.avg2026,
+      visitDate,
+      displayOk:         state.display     || '',
+      displayNote:       document.getElementById('displayNote').value.trim(),
+      competitorPresent: state.competitor  || '',
+      competitorBrand:   document.getElementById('competitorBrand').value.trim(),
+      stockOk:           state.stock       || '',
+      stockNote:         document.getElementById('stockNote').value.trim(),
+      pendingOrders:     state.pending     || '',
+      pendingNote:       document.getElementById('pendingNote').value.trim(),
+      suggestions:       document.getElementById('suggestions').value.trim()
+    };
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="btn-spinner"></div> Submitting…';
+    document.getElementById('loadingOverlay').classList.add('show');
+
+    try {
+      await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+      document.getElementById('loadingOverlay').classList.remove('show');
+      showSuccess();
+    } catch(e) {
+      document.getElementById('loadingOverlay').classList.remove('show');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Submit Visit Report`;
+      showErr('Network error. Check your connection and try again.');
+    }
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function showSuccess() {
+    document.getElementById('formPage').style.display = 'none';
+    document.getElementById('successScreen').classList.add('show');
+    window.scrollTo(0, 0);
+  }
+
+  function resetForm() {
+    ['execName','custSearch','suggestions','displayNote','competitorBrand','stockNote','pendingNote']
+      .forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('errorMsg').classList.remove('show');
+    clearCustCard();
+    document.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sub-field').forEach(sf => sf.classList.remove('open'));
+    Object.keys(state).forEach(k => state[k] = null);
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Submit Visit Report`;
+    document.getElementById('successScreen').classList.remove('show');
+    document.getElementById('formPage').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>
