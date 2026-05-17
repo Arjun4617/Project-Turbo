@@ -657,11 +657,45 @@
 
   // ── Load customers ──
   async function loadCustomers() {
+    const inp = document.getElementById('custSearch');
+    inp.placeholder = 'Loading customers…';
+    inp.disabled = true;
+
     try {
-      const r = await fetch(SCRIPT_URL);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      const r = await fetch(SCRIPT_URL, {
+        method: 'GET',
+        mode: 'cors',
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
-      if (d.status === 'success') customers = d.customers;
-    } catch(e) { console.warn('Could not load customers', e); }
+
+      if (d.status === 'success' && Array.isArray(d.customers)) {
+        customers = d.customers;
+        inp.placeholder = 'Type to search…';
+        inp.disabled = false;
+        inp.focus && inp.removeAttribute('disabled');
+        console.log('Loaded', customers.length, 'customers');
+      } else {
+        throw new Error(d.message || 'Unexpected response');
+      }
+    } catch(e) {
+      console.error('Could not load customers:', e);
+      inp.placeholder = e.name === 'AbortError'
+        ? 'Timeout — check connection'
+        : 'Failed to load — refresh page';
+      inp.disabled = false;
+      // Show a non-blocking warning below the field
+      const warn = document.createElement('div');
+      warn.style.cssText = 'margin:6px 16px 0;padding:10px 14px;background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.22);border-radius:10px;font-size:12px;color:#ff453a;line-height:1.5';
+      warn.innerHTML = '⚠️ Could not load customer list.<br>Check that the Apps Script is deployed as <strong>"Anyone"</strong> (not "Anyone with Google account") and the URL is correct.';
+      document.getElementById('custSearch').closest('.group').after(warn);
+    }
   }
 
   // ── Autocomplete ──
@@ -671,13 +705,21 @@
   function onCustInput() {
     const q = document.getElementById('custSearch').value.trim().toLowerCase();
     if (!q) { closeAC(); clearCustCard(); return; }
-    filteredCache = customers.filter(c => c.name.toLowerCase().includes(q)).slice(0, 12);
+    filteredCache = customers.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      (c.custCode && c.custCode.toString().toLowerCase().includes(q))
+    ).slice(0, 12);
     renderAC(filteredCache, q);
   }
 
   function renderAC(matches, q) {
     const list = document.getElementById('autocompleteList');
-    if (!matches.length) { closeAC(); return; }
+    if (!matches.length) {
+      list.innerHTML = '<div class="autocomplete-item" style="color:var(--ink-2);cursor:default">No customers found</div>';
+      acHighlight = -1;
+      list.classList.add('open');
+      return;
+    }
     const esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
     list.innerHTML = matches.map((c, i) => {
       const hi = c.name.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
