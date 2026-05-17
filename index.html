@@ -125,7 +125,7 @@
     .group-card {
       background: var(--surface);
       border-radius: var(--r-lg);
-      overflow: hidden;
+      /* removed overflow: hidden to allow dropdowns to be visible */
       box-shadow: var(--shadow);
       border: 1px solid rgba(255,255,255,.06);
     }
@@ -649,6 +649,7 @@
 
     const inp = document.getElementById('custSearch');
     inp.addEventListener('input', onCustInput);
+    inp.addEventListener('focus', onCustInput);
     inp.addEventListener('keydown', onCustKeydown);
     document.addEventListener('click', e => {
       if (!document.getElementById('autocompleteList').contains(e.target) && e.target !== inp) closeAC();
@@ -664,9 +665,12 @@
   }
 
   function initCustomers(data) {
+    const inp = document.getElementById('custSearch');
     if (data && data.status === 'success') {
       customers = data.customers;
+      inp.placeholder = `Search from ${customers.length} shops...`;
     } else {
+      inp.placeholder = 'Error loading customers';
       console.warn('Could not load customers', data);
     }
   }
@@ -677,7 +681,13 @@
 
   function onCustInput() {
     const q = document.getElementById('custSearch').value.trim().toLowerCase();
-    if (!q) { closeAC(); clearCustCard(); return; }
+    if (!q) { 
+      filteredCache = customers.slice(0, 12);
+      if (filteredCache.length > 0) renderAC(filteredCache, '');
+      else closeAC();
+      clearCustCard(); 
+      return; 
+    }
     filteredCache = customers.filter(c => c.name.toLowerCase().includes(q)).slice(0, 12);
     renderAC(filteredCache, q);
   }
@@ -685,9 +695,15 @@
   function renderAC(matches, q) {
     const list = document.getElementById('autocompleteList');
     if (!matches.length) { closeAC(); return; }
-    const esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    
+    let esc = '';
+    if (q) esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    
     list.innerHTML = matches.map((c, i) => {
-      const hi = c.name.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
+      let hi = c.name;
+      if (esc) {
+        hi = c.name.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
+      }
       return `<div class="autocomplete-item" data-i="${i}" onmousedown="pickCustomer(${i})">${hi}<small>${c.branch || ''} · ${c.cluster || ''} · Code: ${c.custCode}</small></div>`;
     }).join('');
     acHighlight = -1;
