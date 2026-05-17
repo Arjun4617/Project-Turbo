@@ -633,7 +633,7 @@
 </div><!-- /page -->
 
 <script>
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOsb-ym0v_Ynao-Yk0Po4VrgMKpj53DUJtBW5gP7WC-mljfKzMlu-0YIzuMsfcBe0sYQ/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7TuimNqIIDaPZZ3lLupCIBxvTHghwU7fcqt7VwFxOhxpLDZMOLuDvI95EGHyrtpRU5w/exec';
 
   let customers = [];
   let selectedCustomer = null;
@@ -655,47 +655,75 @@
     });
   });
 
-  // ── Load customers ──
-  async function loadCustomers() {
+  // ── Load customers via JSONP (bypasses CORS with Google Apps Script) ──
+  function loadCustomers() {
     const inp = document.getElementById('custSearch');
     inp.placeholder = 'Loading customers…';
     inp.disabled = true;
 
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
+    const callbackName = 'handleCustomers_' + Date.now();
+    let done = false;
 
-      const r = await fetch(SCRIPT_URL, {
-        method: 'GET',
-        mode: 'cors',
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
+    // Timeout after 15s
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      cleanup();
+      inp.placeholder = 'Timeout — refresh page';
+      inp.disabled = false;
+      showLoadError('Connection timed out. Check your internet and refresh.');
+    }, 15000);
 
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const d = await r.json();
-
-      if (d.status === 'success' && Array.isArray(d.customers)) {
-        customers = d.customers;
+    // JSONP callback — GAS will call this with the data
+    window[callbackName] = function(data) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      cleanup();
+      if (data && data.status === 'success' && Array.isArray(data.customers)) {
+        customers = data.customers;
         inp.placeholder = 'Type to search…';
         inp.disabled = false;
-        inp.focus && inp.removeAttribute('disabled');
-        console.log('Loaded', customers.length, 'customers');
+        console.log('✅ Loaded', customers.length, 'customers');
       } else {
-        throw new Error(d.message || 'Unexpected response');
+        inp.placeholder = 'Error loading — refresh';
+        inp.disabled = false;
+        showLoadError('Apps Script returned an error: ' + (data && data.message ? data.message : 'Unknown'));
       }
-    } catch(e) {
-      console.error('Could not load customers:', e);
-      inp.placeholder = e.name === 'AbortError'
-        ? 'Timeout — check connection'
-        : 'Failed to load — refresh page';
-      inp.disabled = false;
-      // Show a non-blocking warning below the field
-      const warn = document.createElement('div');
-      warn.style.cssText = 'margin:6px 16px 0;padding:10px 14px;background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.22);border-radius:10px;font-size:12px;color:#ff453a;line-height:1.5';
-      warn.innerHTML = '⚠️ Could not load customer list.<br>Check that the Apps Script is deployed as <strong>"Anyone"</strong> (not "Anyone with Google account") and the URL is correct.';
-      document.getElementById('custSearch').closest('.group').after(warn);
+    };
+
+    function cleanup() {
+      delete window[callbackName];
+      const s = document.getElementById('jsonp-script');
+      if (s) s.remove();
     }
+
+    function showLoadError(msg) {
+      const warn = document.createElement('div');
+      warn.style.cssText = 'margin:6px 16px 0;padding:10px 14px;background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.22);border-radius:10px;font-size:12px;color:#ff453a;line-height:1.6';
+      warn.innerHTML = '⚠️ ' + msg + '<br><strong>Also check:</strong> Apps Script deployed as <em>"Anyone"</em>, not "Anyone with Google account".';
+      const grp = document.getElementById('custSearch').closest('.group');
+      // Remove any existing warning first
+      const existing = document.getElementById('load-warn');
+      if (existing) existing.remove();
+      warn.id = 'load-warn';
+      grp.after(warn);
+    }
+
+    // Inject <script> tag — this is what actually calls the GAS URL
+    const script = document.createElement('script');
+    script.id = 'jsonp-script';
+    script.src = SCRIPT_URL + '?callback=' + callbackName;
+    script.onerror = function() {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      cleanup();
+      inp.placeholder = 'Failed to load — refresh';
+      inp.disabled = false;
+      showLoadError('Could not reach Apps Script. The deployment URL may be wrong or the script is not published.');
+    };
+    document.head.appendChild(script);
   }
 
   // ── Autocomplete ──
