@@ -141,13 +141,46 @@
       font-size: 15px; font-weight: 400; color: var(--ink-1);
       min-width: 110px; flex-shrink: 0; pointer-events: none; user-select: none;
     }
-    .field-row input {
+    .field-row input, .field-row select {
       flex: 1; border: none; outline: none; font-family: var(--font);
       font-size: 15px; color: var(--ink-1); background: transparent;
       text-align: right; padding: 14px 0;
       min-width: 0; caret-color: var(--accent);
     }
     .field-row input::placeholder { color: var(--ink-3); }
+    .field-row select { appearance: none; -webkit-appearance: none; direction: rtl; }
+    .field-row select option { direction: ltr; background: var(--surface); color: var(--ink-1); }
+
+    /* Custom Multi-select Dropdown */
+    .multi-select-wrap { position: relative; flex: 1; }
+    .multi-select-box {
+      width: 100%; text-align: right; padding: 14px 0;
+      font-size: 15px; color: var(--ink-3); cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      user-select: none; min-height: 48px; display: flex; align-items: center; justify-content: flex-end;
+    }
+    .multi-select-box.has-val { color: var(--ink-1); }
+    .multi-select-list {
+      position: absolute; top: calc(100% + 6px); right: -16px; left: -110px;
+      background: var(--surface-2); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r-md);
+      box-shadow: 0 20px 60px rgba(0,0,0,.7); z-index: 200; max-height: 250px; overflow-y: auto;
+      display: none; flex-direction: column; -webkit-overflow-scrolling: touch;
+    }
+    .multi-select-list.open { display: flex; animation: fadeUp .15s var(--ease); }
+    .ms-item {
+      display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse;
+      padding: 12px 16px; font-size: 14px; color: var(--ink-1); cursor: pointer;
+      transition: background .12s; border-bottom: .5px solid var(--sep); user-select: none;
+    }
+    .ms-item:last-child { border-bottom: none; }
+    .ms-item:hover, .ms-item:active { background: var(--surface-3); }
+    .ms-tick-box {
+      width: 18px; height: 18px; border: 1.5px solid var(--ink-3); border-radius: 4px;
+      display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0;
+    }
+    .ms-item.selected .ms-tick-box { background: var(--accent); border-color: var(--accent); }
+    .ms-tick-box svg { opacity: 0; width: 12px; height: 12px; stroke: #080809; transition: opacity .15s; }
+    .ms-item.selected .ms-tick-box svg { opacity: 1; }
 
     /* ── Autocomplete ── */
     .autocomplete-wrap { position: relative; flex: 1; }
@@ -460,6 +493,14 @@
           <label>Your Name</label>
           <input type="text" id="execName" placeholder="Sales executive" autocomplete="off"/>
         </div>
+        <div class="field-row">
+          <label>Region</label>
+          <select id="regionSelect">
+            <option value="" disabled selected>Select Region</option>
+            <option value="Riyadh">Riyadh</option>
+            <option value="Jeddah">Jeddah</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -604,7 +645,33 @@
       </div>
     </div>
 
-    <!-- 5. Suggestions -->
+    <!-- 5. Targeted Product -->
+    <div class="check-item">
+      <div class="check-item-head">
+        <div class="check-item-label">
+          <div class="check-item-num">05</div>
+          Targeted Product Catagory
+          <div class="check-item-desc">Select product catagories and target month</div>
+        </div>
+      </div>
+      <div style="border-top: .5px solid var(--sep); padding: 0;">
+        <div class="field-row">
+          <label style="font-size: 14px;">Product</label>
+          <div class="multi-select-wrap">
+            <div class="multi-select-box" id="targetProductBox" onclick="toggleMS(event)">Select Products...</div>
+            <div class="multi-select-list" id="targetProductList"></div>
+          </div>
+        </div>
+        <div class="field-row">
+          <label style="font-size: 14px;">Target Month</label>
+          <select id="targetMonth">
+            <option value="" disabled selected>Select Month...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Suggestions -->
     <div class="suggest-box">
       <div class="suggest-box-head">
         <div class="suggest-icon">
@@ -650,6 +717,32 @@
     document.getElementById('todayPill').textContent =
       d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 
+    const currentYear = d.getFullYear();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthSelect = document.getElementById('targetMonth');
+    months.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = `${m} ${currentYear}`;
+      opt.textContent = `${m} ${currentYear}`;
+      monthSelect.appendChild(opt);
+    });
+
+    // Populate Custom Multi-Select for Products
+    const PROD_CATEGORIES = [
+      "Air Compressors", "Air Fresheners", "Booster Cables", "Car Mats", "Cleaning Cloths",
+      "Door Guards", "Automotive Films", "General Car Accessories", "Gluing Materials",
+      "Halogen Bulbs", "Horn", "LED Lights", "Automotive Paints", "Polish & Cleaning Products",
+      "Protective Covers", "Seat Comfort Accessories", "Seat Covers", "Steering Covers",
+      "Sun Shades", "Wheel Covers", "Wiper Blades"
+    ];
+    const msList = document.getElementById('targetProductList');
+    msList.innerHTML = PROD_CATEGORIES.map(p => `
+      <div class="ms-item" onclick="toggleMSItem(this, '${p}')">
+        <span>${p}</span>
+        <div class="ms-tick-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+    `).join('');
+
     loadCustomers();
 
     const inp = document.getElementById('custSearch');
@@ -658,8 +751,36 @@
     inp.addEventListener('keydown', onCustKeydown);
     document.addEventListener('click', e => {
       if (!document.getElementById('autocompleteList').contains(e.target) && e.target !== inp) closeAC();
+      const msWrap = document.querySelector('.multi-select-wrap');
+      if (msWrap && !msWrap.contains(e.target)) {
+        document.getElementById('targetProductList').classList.remove('open');
+      }
     });
   });
+
+  let selectedProducts = [];
+  function toggleMS(e) {
+    if(e) e.stopPropagation();
+    document.getElementById('targetProductList').classList.toggle('open');
+  }
+  function toggleMSItem(el, prod) {
+    const idx = selectedProducts.indexOf(prod);
+    if (idx > -1) {
+      selectedProducts.splice(idx, 1);
+      el.classList.remove('selected');
+    } else {
+      selectedProducts.push(prod);
+      el.classList.add('selected');
+    }
+    const box = document.getElementById('targetProductBox');
+    if (selectedProducts.length === 0) {
+      box.textContent = 'Select Products...';
+      box.classList.remove('has-val');
+    } else {
+      box.textContent = selectedProducts.join(', ');
+      box.classList.add('has-val');
+    }
+  }
 
   // ── Load customers ──
   function loadCustomers() {
@@ -784,11 +905,13 @@
   // ── Submit ──
   async function submitForm() {
     const execName = document.getElementById('execName').value.trim();
+    const regionName = document.getElementById('regionSelect').value;
     const custName = document.getElementById('custSearch').value.trim();
     const errEl    = document.getElementById('errorMsg');
     errEl.classList.remove('show');
 
     if (!execName)                      { showErr('Please enter your name before submitting.'); return; }
+    if (!regionName)                    { showErr('Please select a region.'); return; }
     if (!custName || !selectedCustomer) { showErr('Please select a customer from the list.'); return; }
 
     const visitDate = new Date().toISOString().split('T')[0];
@@ -807,6 +930,7 @@
       avg2025:           selectedCustomer.avg2025,
       avg2026:           selectedCustomer.avg2026,
       visitDate,
+      region:            document.getElementById('regionSelect').value || '',
       displayOk:         state.display     || '',
       displayNote:       document.getElementById('displayNote').value.trim(),
       competitorPresent: state.competitor  || '',
@@ -815,6 +939,8 @@
       stockNote:         document.getElementById('stockNote').value.trim(),
       pendingOrders:     state.pending     || '',
       pendingNote:       document.getElementById('pendingNote').value.trim(),
+      targetProduct:     selectedProducts.join(', '),
+      targetMonth:       document.getElementById('targetMonth').value || '',
       suggestions:       document.getElementById('suggestions').value.trim()
     };
 
@@ -854,8 +980,14 @@
   }
 
   function resetForm() {
-    ['execName','custSearch','suggestions','displayNote','competitorBrand','stockNote','pendingNote']
+    ['execName','regionSelect','custSearch','targetMonth','suggestions','displayNote','competitorBrand','stockNote','pendingNote']
       .forEach(id => { document.getElementById(id).value = ''; });
+    
+    selectedProducts = [];
+    const msBox = document.getElementById('targetProductBox');
+    msBox.textContent = 'Select Products...';
+    msBox.classList.remove('has-val');
+    document.querySelectorAll('#targetProductList .ms-item').forEach(el => el.classList.remove('selected'));
     document.getElementById('errorMsg').classList.remove('show');
     clearCustCard();
     document.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active'));
