@@ -549,7 +549,7 @@
           <div class="cust-cell-val" id="ccLastMonth">—</div>
         </div>
         <div class="cust-cell gold">
-          <div class="cust-cell-lbl">May Till 16</div>
+          <div class="cust-cell-lbl" id="ccMayLabel">May Till 16</div>
           <div class="cust-cell-val" id="ccMay">—</div>
         </div>
         <div class="cust-cell">
@@ -789,11 +789,35 @@
     document.body.appendChild(script);
   }
 
+  let dynamicHeaderKey = 'mayTill16';
+
+  function formatHeaderKey(key) {
+    const words = key
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([0-9]+)/g, ' $1')
+      .trim()
+      .split(/\s+/);
+    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
   function initCustomers(data) {
     const inp = document.getElementById('custSearch');
     if (data && data.status === 'success') {
       customers = data.customers;
       inp.placeholder = `Search from ${customers.length} shops...`;
+      
+      if (customers.length > 0) {
+        const knownKeys = ['custCode', 'name', 'branch', 'cluster', 'enrolledMonth', 'enrolledYear', 'lastMonthBill', 'avg2024', 'avg2025', 'avg2026'];
+        const foundKey = Object.keys(customers[0]).find(k => !knownKeys.includes(k));
+        if (foundKey) {
+          dynamicHeaderKey = foundKey;
+          const labelText = formatHeaderKey(dynamicHeaderKey);
+          const labelEl = document.getElementById('ccMayLabel');
+          if (labelEl) {
+            labelEl.textContent = labelText;
+          }
+        }
+      }
     } else {
       inp.placeholder = 'Error loading customers';
       console.warn('Could not load customers', data);
@@ -867,7 +891,7 @@
     document.getElementById('ccCluster').textContent   = c.cluster       || '—';
     document.getElementById('ccEnrolled').textContent  = c.enrolledMonth ? c.enrolledMonth + ' ' + c.enrolledYear : '—';
     document.getElementById('ccLastMonth').textContent = fmt(c.lastMonthBill);
-    document.getElementById('ccMay').textContent       = fmt(c.mayTill16);
+    document.getElementById('ccMay').textContent       = fmt(c[dynamicHeaderKey]);
     document.getElementById('ccAvg24').textContent     = fmt(c.avg2024);
     document.getElementById('ccAvg25').textContent     = fmt(c.avg2025);
     document.getElementById('ccAvg26').textContent     = fmt(c.avg2026);
@@ -924,7 +948,7 @@
       enrolledMonth:     selectedCustomer.enrolledMonth,
       enrolledYear:      selectedCustomer.enrolledYear,
       lastMonthBill:     selectedCustomer.lastMonthBill,
-      mayTill16:         selectedCustomer.mayTill16,
+      [dynamicHeaderKey]: selectedCustomer[dynamicHeaderKey],
       avg2024:           selectedCustomer.avg2024,
       avg2025:           selectedCustomer.avg2025,
       avg2026:           selectedCustomer.avg2026,
