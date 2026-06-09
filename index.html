@@ -185,6 +185,7 @@
     /* ── Autocomplete ── */
     .autocomplete-wrap { position: relative; flex: 1; }
     .autocomplete-wrap input { width: 100%; text-align: right; }
+    #custSearch { font-size: 12px; }
     .autocomplete-list {
       position: absolute; top: calc(100% + 6px); right: -16px; left: -126px;
       background: var(--surface-2);
@@ -198,16 +199,31 @@
     }
     .autocomplete-list.open { display: block; animation: fadeUp .15s var(--ease); }
     .autocomplete-item {
-      padding: 11px 14px;
-      font-size: 14px; color: var(--ink-1);
+      padding: 10px 14px;
       cursor: pointer;
       border-bottom: .5px solid var(--sep);
       transition: background .12s;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
     .autocomplete-item:last-child { border-bottom: none; }
     .autocomplete-item.highlighted, .autocomplete-item:active { background: var(--surface-3); }
     .autocomplete-item mark { background: none; color: var(--accent); font-weight: 700; }
-    .autocomplete-item small { display: block; font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+    .ac-code {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .ac-name {
+      font-size: 10.5px;
+      color: var(--ink-1);
+      font-weight: 500;
+    }
+    .ac-meta {
+      font-size: 9.5px;
+      color: var(--ink-2);
+    }
 
     /* ── Customer detail card ── */
     .cust-card {
@@ -233,8 +249,8 @@
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .cust-card-title { font-size: 13px; font-weight: 700; color: var(--accent); }
-    .cust-card-code  { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
+    .cust-card-title { font-size: 10.5px; color: var(--ink-1); margin-top: 2px; }
+    .cust-card-code  { font-size: 14px; font-weight: 700; color: var(--accent); }
     .cust-grid {
       display: grid; grid-template-columns: 1fr 1fr 1fr;
       gap: .5px; background: var(--sep);
@@ -527,8 +543,8 @@
           </svg>
         </div>
         <div>
-          <div class="cust-card-title" id="ccName">—</div>
           <div class="cust-card-code"  id="ccCode">—</div>
+          <div class="cust-card-title" id="ccName">—</div>
         </div>
       </div>
       <div class="cust-grid">
@@ -795,7 +811,7 @@
     const inp = document.getElementById('custSearch');
     if (data && data.status === 'success') {
       customers = data.customers;
-      inp.placeholder = `Search from ${customers.length} shops...`;
+      inp.placeholder = `Search code or name of ${customers.length} shops...`;
       
       if (data.dynamicHeaderName) {
         dynamicHeaderName = data.dynamicHeaderName;
@@ -815,15 +831,61 @@
   let filteredCache = [];
 
   function onCustInput() {
-    const q = document.getElementById('custSearch').value.trim().toLowerCase();
-    if (!q) { 
+    let q = document.getElementById('custSearch').value.trim().toLowerCase();
+    
+    // Clear customer card if the user edited the search field to something different from selected customer
+    if (selectedCustomer) {
+      const fullLabel = (selectedCustomer.custCode + ' - ' + selectedCustomer.name).toLowerCase();
+      if (q !== fullLabel) {
+        clearCustCard();
+      } else {
+        // If it matches exactly the selected customer, use the customer code to display the filtered list
+        q = selectedCustomer.custCode.toLowerCase();
+      }
+    }
+    
+    if (!q) {
       filteredCache = customers.slice(0, 12);
       if (filteredCache.length > 0) renderAC(filteredCache, '');
       else closeAC();
-      clearCustCard(); 
-      return; 
+      return;
     }
-    filteredCache = customers.filter(c => c.name.toLowerCase().includes(q)).slice(0, 12);
+    
+    // Filter customers matching name or code
+    filteredCache = customers.filter(c => 
+      c.name.toLowerCase().includes(q) || 
+      String(c.custCode).toLowerCase().includes(q)
+    );
+    
+    // Sort matches to prioritize code matching and bring them to the top
+    filteredCache.sort((a, b) => {
+      const aCode = String(a.custCode).toLowerCase();
+      const bCode = String(b.custCode).toLowerCase();
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact code match
+      if (aCode === q && bCode !== q) return -1;
+      if (bCode === q && aCode !== q) return 1;
+      
+      // Starts with code
+      if (aCode.startsWith(q) && !bCode.startsWith(q)) return -1;
+      if (bCode.startsWith(q) && !aCode.startsWith(q)) return 1;
+      
+      // Code includes query
+      const aCodeInc = aCode.includes(q);
+      const bCodeInc = bCode.includes(q);
+      if (aCodeInc && !bCodeInc) return -1;
+      if (bCodeInc && !aCodeInc) return 1;
+      
+      // Starts with name
+      if (aName.startsWith(q) && !bName.startsWith(q)) return -1;
+      if (bName.startsWith(q) && !aName.startsWith(q)) return 1;
+      
+      return 0;
+    });
+
+    filteredCache = filteredCache.slice(0, 12);
     renderAC(filteredCache, q);
   }
 
@@ -835,11 +897,19 @@
     if (q) esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
     
     list.innerHTML = matches.map((c, i) => {
-      let hi = c.name;
+      let hiName = c.name;
+      let hiCode = String(c.custCode);
       if (esc) {
-        hi = c.name.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
+        hiName = c.name.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
+        hiCode = String(c.custCode).replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
       }
-      return `<div class="autocomplete-item" data-i="${i}" onmousedown="pickCustomer(${i})">${hi}<small>${c.branch || ''} · ${c.cluster || ''} · Code: ${c.custCode}</small></div>`;
+      return `
+        <div class="autocomplete-item" data-i="${i}" onmousedown="pickCustomer(${i})">
+          <div class="ac-code">Code: ${hiCode}</div>
+          <div class="ac-name">${hiName}</div>
+          <div class="ac-meta">${c.branch || ''} · ${c.cluster || ''}</div>
+        </div>
+      `;
     }).join('');
     acHighlight = -1;
     list.classList.add('open');
@@ -865,7 +935,7 @@
 
   function pickCustomer(idx) {
     selectedCustomer = filteredCache[idx];
-    document.getElementById('custSearch').value = selectedCustomer.name;
+    document.getElementById('custSearch').value = selectedCustomer.custCode + ' - ' + selectedCustomer.name;
     closeAC();
     showCustCard(selectedCustomer);
   }
